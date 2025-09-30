@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Calculator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f4f8;
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        text-align: center;
+        color: #0077cc;
+        margin-top: 20px;}
+
+    .container {display: flex;
+        flex-wrap: wrap;
+        justify-content: space-around;
+        margin: 20px;
+        gap: 20px;
+    }
+
+    .calculator, .suggestions {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        padding: 20px;
+        flex: 1 1 400px;
+        min-width: 300px;
+    }
+
+    .calculator h2, .suggestions h2 {
+        margin-top: 0;
+        color: #0077cc;
+    }
+
+    input[type="number"] {
+        width: 60px;
+        padding: 5px;
+        margin: 5px 2px;
+        border-radius: 5px; border: 1px solid #ccc;
+        text-align: center;
+    }
+
+    button {
+        padding: 8px 15px;
+        margin: 5px;
+        border: none; border-radius: 5px;
+        background-color: #0077cc;
+        color: white;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    button:hover {
+        background-color: #005fa3;
+    }
+
+    #results {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #e0f7fa;
+        border-radius: 5px;
+    }
+
+    .suggestion {
+        padding: 5px 10px;
+        margin-bottom: 5px;
+        background-color: #e0f7fa;
+        border-radius: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .suggestion button {
+        background-color: #cc0000;
+        padding: 2px 6px;
+        font-size: 0.8em;
+    }
+
+    .suggestion button:hover {
+        background-color: #990000;
+    }
+
+    @media(max-width: 700px) {
+        .container { flex-direction: column; }
+    }
+</style>
+</head>
+<body>
+
+<h1>Mini Calculator</h1>
+
+<div class="container">
+
+    <!-- Calculator -->
+    <div class="calculator">
+        <h2>Operations</h2>
+        <p>Enter numbers separated by commas (except for Absolute Value which takes one number):</p>
+        <input type="text" id="numbers" placeholder="e.g. 1,2,3">
+        <input type="number" id="singleNumber" placeholder="Single number for Abs" style="display:none;">
+
+        <div style="margin-top:10px;">
+            <button onclick="calculate('sum')">Addition</button>
+            <button onclick="calculate('sub')">Subtraction</button>
+            <button onclick="calculate('mul')">Multiplication</button>
+            <button onclick="calculate('div')">Division</button>
+            <button onclick="calculate('mean')">Mean</button>
+            <button onclick="calculate('mod')">Modulus</button>
+            <button onclick="calculate('abs')">Absolute Value</button>
+            <button onclick="showHelp()">HELP?!</button>
+        </div>
+
+        <div id="results"></div>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="suggestions">
+        <h2>Suggestions</h2>
+        <form id="suggestForm">
+            <input type="text" id="suggest" placeholder="Add a feature suggestion">
+            <button type="submit">Submit</button>
+            <button type="button" id="resetOne">Reset One</button>
+            <button type="button" id="resetAll">Reset All</button>
+        </form>
+
+        <div id="suggestionsList"></div>
+    </div>
+
+</div>
+
+<script>
+    // Helper function to parse number input
+    function parseNumbers() {
+        const input = document.getElementById('numbers').value.trim();
+        if (!input) return [];
+        return input.split(',').map(num => {
+            const n = Number(num.trim());
+            if(isNaN(n)) throw "Invalid input";
+            return n;
+        });
+    }
+
+    function calculate(op) {
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.textContent = '';
+        try {
+            if(op === 'abs') {
+                const num = Number(document.getElementById('singleNumber').value);
+                if(isNaN(num)) { resultsDiv.textContent = "Enter a valid number."; return; }
+                resultsDiv.textContent = `Absolute value: ${Math.abs(num)}`;
+                return;
+            }
+
+            const numbers = parseNumbers();
+            if(numbers.length === 0) { resultsDiv.textContent = "Enter numbers separated by commas."; return; }
+
+            let result;
+            switch(op) {
+                case 'sum': result = numbers.reduce((a,b)=>a+b,0); break;
+                case 'sub': result = numbers.reduce((a,b)=>a-b); break;
+                case 'mul': result = numbers.reduce((a,b)=>a*b,1); break;
+                case 'div':
+                    if(numbers.slice(1).includes(0)) { resultsDiv.textContent = "Error: Division by zero"; return; }
+                    result = numbers.reduce((a,b)=>a/b); break;
+                case 'mean': result = numbers.reduce((a,b)=>a+b,0)/numbers.length; break;
+                case 'mod':
+                    if(numbers.length !== 2) { resultsDiv.textContent = "Modulus requires exactly 2 numbers"; return; }
+                    result = numbers[0] % numbers[1]; break;
+                default: resultsDiv.textContent = "Unknown operation"; return;
+            }
+            resultsDiv.textContent = `Result: ${result}`;
+        } catch(e) {
+            resultsDiv.textContent = "Invalid input, please enter numbers only.";
+        }
+    }
+
+    function showHelp() {
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = `
+            <b>Calculator Help:</b><br>
+            - Enter numbers separated by commas for operations.<br>
+            - Absolute value uses the single number input.<br>
+            - Modulus requires exactly 2 numbers.<br>
+            - Division by zero is not allowed.<br>
+        `;
+    }
+
+    // Suggestion form
+    const form = document.getElementById('suggestForm');
+    const suggestionsList = document.getElementById('suggestionsList');
+    const resetOne = document.getElementById('resetOne');
+    const resetAll = document.getElementById('resetAll');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        const input = document.getElementById('suggest');
+        const value = input.value.trim();
+        if(value === '') return;
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.innerHTML = `${value} <button onclick="this.parentNode.remove()">X</button>`;
+        suggestionsList.appendChild(div);
+        input.value = '';
+    });
+
+    resetOne.addEventListener('click', () => {
+        const last = suggestionsList.lastChild;
+        if(last) last.remove();
+    });
+
+    resetAll.addEventListener('click', () => {
+        suggestionsList.innerHTML = '';
+    });
+</script>
+  <!-- HELLLLLOOOOOOOOO how are you???? hope your good! -->
+
+</body>
+</html>
